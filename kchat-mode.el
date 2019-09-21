@@ -8,10 +8,15 @@
 (defvar keybase-program "keybase"
   "The name of the keybase executable")
 
+(defun keybase-cmd (cmd)
+  "Prepend `keybase-program' to `cmd' to generate a keybase command string"
+  (format "%s %s" keybase-program cmd))
+
 (defun kchat-list ()
   "List the active conversations"
-  (async-shell-command "keybase chat api -m '{\"method\": \"list\"}' -p"
-                       (get-buffer-create "keybase:list")))
+  (async-shell-command
+   (keybase-cmd "chat api -m '{\"method\": \"list\"}' -p")
+   (get-buffer-create "keybase:list")))
 
 ;; Show the conversation that self is having with user.
 ;; TODO: This dumps the /entire/ conversation---how can we truncate it?
@@ -19,13 +24,14 @@
   "Listen to the conversation with user, print the output in JSON to buffer"
   (let ((everyone (string-join (cons self users) ",")))
     (async-shell-command
-     (format "keybase chat api -m '%s'"
+     (keybase-cmd
+      (format "chat api -m '%s'"
              (json-encode
               `(:method "read"
                 :params
                   (:options
                     (:channel
-                      (:name ,everyone))))))
+                      (:name ,everyone)))))))
      (get-buffer-create (format "keybase:%s" everyone)))))
 
 ;; Continuously monitor conversation with user, print new output to buffer
@@ -33,15 +39,17 @@
 (defun kchat-conversation-listen (user)
   "Listen to the conversation with user, print the output in JSON to buffer"
   (async-shell-command
-   (format "keybase chat api-listen --filter-channel '{\"name\":\"%s\"}'" user)
+   (keybase-cmd
+    (format "chat api-listen --filter-channel '{\"name\":\"%s\"}'" user))
    (get-buffer-create (format "keybase:%s" user))))
 
 ;; Sends message to recipient via keybase chat send
 (defun kchat-send-message (recipient message)
   "Send a message to a keybase user."
-  (start-process-shell-command "keybase-send"
+  (start-process-shell-command
+   "keybase-send"
    nil
-   (format "keybase chat send %s '%s'" recipient message)))
+   (keybase-cmd (format "chat send %s '%s'" recipient message))))
 
 ;; An interface for sending Keybase messages from the minibuffer
 (defun kchat-message-prompt ()
