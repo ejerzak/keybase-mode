@@ -15,7 +15,7 @@
 ;; Show the conversation that self is having with user.
 ;; TODO: Allow for group chats with multiple users
 ;; TODO: This dumps the /entire/ conversation--maybe it needs to be truncated?
-(defun kchat-conversation-show (self user options)
+(defun kchat-conversation-show (self user)
   "Listen to the conversation with user, print the output in JSON to buffer"
   (async-shell-command (concat "keybase chat api -m '{\"method\": \"read\", \"params\": {\"options\": {\"channel\": {\"name\": \""
 			       self
