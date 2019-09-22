@@ -20,7 +20,7 @@
 
 ;; Show the conversation that self is having with user.
 ;; TODO: This dumps the /entire/ conversation---how can we truncate it?
-(defun kchat-conversation-show (self &optional users)
+(defun kchat-conversation-show (self &rest users)
   "Listen to the conversation with user, print the output in JSON to buffer"
   (let ((everyone (string-join (cons self users) ",")))
     (async-shell-command
