@@ -15,7 +15,10 @@
 (defun kchat-list ()
   "List the active conversations"
   (async-shell-command
-   (keybase-cmd "chat api -m '{\"method\": \"list\"}' -p")
+   (keybase-cmd
+    (format "chat api -p -m '%s'"
+		(json-encode
+		 `(:method "list"))))
    (get-buffer-create "keybase:list")))
 
 ;; Show the conversation that self is having with user.
