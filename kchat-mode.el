@@ -21,7 +21,7 @@
 ;; Show the conversation that self is having with user.
 ;; TODO: This dumps the /entire/ conversation---how can we truncate it?
 (defun kchat-conversation-show (self &rest users)
-  "Listen to the conversation with user, print the output in JSON to buffer"
+  "Listen to the conversation with user(s), print the output in JSON to buffer"
   (let ((everyone (string-join (cons self users) ",")))
     (async-shell-command
      (keybase-cmd
@@ -34,14 +34,17 @@
                       (:name ,everyone)))))))
      (get-buffer-create (format "keybase:%s" everyone)))))
 
-;; Continuously monitor conversation with user, print new output to buffer
+;; Continuously monitor conversation with user(s), print new output to buffer
 ;; TODO: Probably this should be in a temp buffer eventually, then added to the proper conversation one?
-(defun kchat-conversation-listen (user)
-  "Listen to the conversation with user, print the output in JSON to buffer"
-  (async-shell-command
-   (keybase-cmd
-    (format "chat api-listen --filter-channel '{\"name\":\"%s\"}'" user))
-   (get-buffer-create (format "keybase:%s" user))))
+(defun kchat-conversation-listen (self &rest users)
+  "Listen to the conversation with user(s), print the output in JSON to buffer"
+  (let ((everyone (string-join (cons self users) ",")))
+    (async-shell-command
+     (keybase-cmd
+      (format "chat api-listen --filter-channel '%s'"
+	      (json-encode
+	       `(:name ,everyone))))
+    (get-buffer-create (format "keybase:%s" everyone)))))
 
 ;; Sends message to recipient via keybase chat send
 (defun kchat-send-message (recipient message)
