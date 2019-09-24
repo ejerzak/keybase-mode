@@ -73,7 +73,8 @@
                (body (alist-get 'body text)))
           (save-excursion
             (set-buffer buffer)
-            (insert  (format "%s: %s" username body))
+            (goto-char (point-max))
+            (insert (format "%s: %s" username body))
             (newline))))))))
                         
 
