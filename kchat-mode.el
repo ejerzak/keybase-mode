@@ -1,3 +1,4 @@
+;;;; -*- lexical-binding: t -*-
 ;;;; This is a major mode for interacting with Keybase Chat. It
 ;;;; requires that you have the Keybase app installed, and interaction
 ;;;; with the filesystem enabled.
@@ -41,13 +42,40 @@
 ;; TODO: Probably this should be in a temp buffer eventually, then added to the proper conversation one?
 (defun kchat-conversation-listen (self &rest users)
   "Listen to the conversation with user(s), print the output in JSON to buffer"
-  (let ((everyone (string-join (cons self users) ",")))
-    (async-shell-command
-     (keybase-cmd
-      (format "chat api-listen --filter-channel '%s'"
-	      (json-encode
-	       `(:name ,everyone))))
-    (get-buffer-create (format "keybase:%s" everyone)))))
+  (let* ((everyone (string-join (cons self users) ","))
+         (chat-buffer (get-buffer-create (format "keybase:%s" everyone)))
+         (proc
+          (start-process-shell-command
+           "keybase-listen"
+           nil 
+           (keybase-cmd
+            (format "chat api-listen --filter-channel '%s'"
+                    (json-encode
+                     `(:name ,everyone)))))))
+    (set-process-filter proc (kchat-json-filter-to chat-buffer))
+    proc))
+
+(defun kchat-json-filter-to (buffer)
+  "Returns a process filter that reads JSON chat messages into BUFFER"
+  (lambda (proc output)
+    (with-temp-buffer
+      (insert output)
+      (goto-char (point-min))
+      ;; skip the header information that the process outputs initially:
+      (when (search-forward "{\"" nil t)
+        (goto-char (match-beginning 0))
+        (let* ((message (json-read))
+               (msg (alist-get 'msg message))
+               (sender (alist-get 'sender msg))
+               (username (alist-get 'username sender))
+               (content (alist-get 'content msg))
+               (text (alist-get 'text content))
+               (body (alist-get 'body text)))
+          (save-excursion
+            (set-buffer buffer)
+            (insert  (format "%s: %s" username body))
+            (newline))))))))
+                        
 
 ;; Sends message to recipient via keybase chat send
 (defun kchat-send-message (recipient message)
