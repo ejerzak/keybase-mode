@@ -75,7 +75,7 @@
             (set-buffer buffer)
             (goto-char (point-max))
             (insert (format "%s: %s" username body))
-            (newline))))))))
+            (newline)))))))
                         
 
 ;; Sends message to recipient via keybase chat send
