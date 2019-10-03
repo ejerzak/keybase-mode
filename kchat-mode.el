@@ -22,23 +22,29 @@
 		 `(:method "list"))))
    (get-buffer-create "keybase:list")))
 
-;; Show the conversation that self is having with user.
+
+;; Show the conversation that self is having with user to depth num.
+;; TODO crashes with process filter; JSON reading issues
 (defun kchat-conversation-show (num self &rest users)
   "Listen to the conversation with user(s), print the output in JSON to buffer"
-  (let ((everyone (string-join (cons self users) ",")))
-    (async-shell-command
-     (keybase-cmd
-      (format "chat api -m '%s'"
-             (json-encode
-              `(:method "read"
-                :params
-                  (:options
-                    (:channel
-		     (:name ,everyone)
-		     :pagination
-		     (:num ,num)))))))
-     (get-buffer-create (format "keybase:%s" everyone)))))
-
+  (let* ((everyone (string-join (cons self users) ","))
+	 (chat-buffer (get-buffer-create (format "keybase:%s" everyone)))
+	 (proc
+	  (start-process-shell-command
+	   "keybase-show-conversation"
+	   chat-buffer
+	   (keybase-cmd
+	    (format "chat api -m '%s'"
+		    (json-encode
+		     `(:method "read"
+			       :params
+			       (:options
+				(:channel
+				 (:name ,everyone)
+				 :pagination
+				 (:num ,num))))))))))
+;    (set-process-filter proc (kchat-json-filter-to chat-buffer))
+    proc))
 
 ;; Continuously monitor conversation with user(s), print new output to buffer
 ;; TODO: Probably this should be in a temp buffer eventually, then added to the proper conversation one?
